@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -28,9 +29,25 @@ export function Home() {
   const [searchListData, setSearchListData] = useState<LoginListDataProps>([]);
   const [data, setData] = useState<LoginListDataProps>([]);
 
-  async function loadData() {
-    const dataKey = '@savepass:logins';
-    // Get asyncStorage data, use setSearchListData and setData
+  const getLoginDataFromAsyncStorage = async (): Promise<LoginListDataProps | null> => {
+    try {
+      const dataKey = '@savepass:logins';
+      const loginDataAsJSON = await AsyncStorage.getItem(dataKey);
+      return loginDataAsJSON !== null ? JSON.parse(loginDataAsJSON) : null;
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Não foi possível obter os dados dos serviços cadastrados");
+      return null;
+    }
+  };
+
+  async function loadData() {    
+    const loginData = await getLoginDataFromAsyncStorage()
+
+    if (loginData) {
+      setSearchListData(loginData)
+      setData(loginData)
+    }
   }
 
   function handleFilterLoginData() {
