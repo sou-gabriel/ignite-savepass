@@ -23,6 +23,10 @@ interface FormData {
   password: string;
 }
 
+interface NewLoginData extends FormData {
+  id: string
+}
+
 const schema = Yup.object().shape({
   service_name: Yup.string().required('Nome do serviço é obrigatório!'),
   email: Yup.string().email('Não é um email válido').required('Email é obrigatório!'),
@@ -41,15 +45,37 @@ export function RegisterLoginData() {
     resolver: yupResolver(schema)
   });
 
+  const setLoginDataIntoAsyncStorage = async (newLoginData: NewLoginData) => {
+    try {
+      const dataKey = "@savepass:logins";
+      const loginDataAsJSON = await AsyncStorage.getItem(dataKey);
+
+      if (!loginDataAsJSON) {
+        await AsyncStorage.setItem(dataKey, JSON.stringify([newLoginData]));
+        navigate("Home");
+        return;
+      }
+
+      const loginData = JSON.parse(loginDataAsJSON);
+
+      await AsyncStorage.setItem(
+        dataKey,
+        JSON.stringify([...loginData, newLoginData])
+      );
+      navigate("Home");
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Não foi possível armazenar os dados no armazenamento local");
+    }
+  };
+
   async function handleRegister(formData: FormData) {
     const newLoginData = {
       id: String(uuid.v4()),
-      ...formData
-    }
+      ...formData,
+    };
 
-    const dataKey = '@savepass:logins';
-
-    // Save data on AsyncStorage and navigate to 'Home' screen
+    await setLoginDataIntoAsyncStorage(newLoginData);
   }
 
   return (
